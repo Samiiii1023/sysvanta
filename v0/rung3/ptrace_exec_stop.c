@@ -27,11 +27,28 @@ waitpid(pid, &status, 0);
 if(WIFSTOPPED(status)){
 
 printf("Parent: child stopped at exec under ptrace\n");
-ptrace(PTRACE_CONT, pid, NULL, NULL);
+
 }
 
+while(1) {
+
+ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
+
 waitpid(pid, &status, 0);
+
+if(WIFEXITED(status)){
+
 printf("Parent: child exited\n");
+break;
+
+}
+
+if(WIFSTOPPED(status)){
+
+printf("Syscall stop\n");
+}
+
+}
 
 }
 return 0;
