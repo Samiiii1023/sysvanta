@@ -6,9 +6,27 @@
 #include <sys/ptrace.h>
 #include <sys/user.h>
 #include "syscall_table.h"
+#define MAX_SYSCALLS 10000
+#define MAX_BIGRAMS 1000
+
 int main(){
 
+
 pid_t pid = fork();
+
+int syscall_stream[MAX_SYSCALLS];
+
+int sc_index = 0;
+
+
+typedef struct {
+int a;
+int b;
+int count;
+} bigram_t;
+
+bigram_t bigrams[MAX_BIGRAMS];
+int bigram_count = 0;
 
 if (pid == 0){
 //child process
@@ -22,6 +40,7 @@ else{
 //parent process
 
 int status, entering = 1, syscall_count[512] = {0};
+
 
 waitpid(pid, &status, 0);
 
@@ -55,7 +74,11 @@ if(entering) {
 	
 	if (sc >= 0 && sc <= 512){
 	
-	syscall_count[sc]++;
+	syscall_count[sc]++; //frequency
+}
+
+	if (sc_index < MAX_SYSCALLS){
+	syscall_stream[sc_index++] = sc; //order
 }
 	entering = 0;
 }
@@ -66,7 +89,34 @@ else {
 
 } //WIFSTOPPED
 
-} //while 
+}
+      
+
+for (int i = 0; i < sc_index - 1 ; i++){
+
+int x = syscall_stream[i];
+int y = syscall_stream[i+1];
+
+//find exiting bigram
+
+int found = 0;
+for (int j = 0; j < bigram_count; j++){
+	if(bigrams[j].a == x && bigrams[j].b == y){
+	
+	bigrams[j].count++;
+	found = 1;
+	break;
+	}
+
+}
+
+if(!found && bigram_count < 1000){
+	bigrams[bigram_count++] = (bigram_t){x, y, 1};
+}      
+
+} //for loops end 
+    
+
 
     printf("\n=== Syscll Frequency Summary ===\n");
 
@@ -77,6 +127,25 @@ else {
       }
 
     }
+
+
+printf("\n=== Syscall Bigrams ===\n");
+
+for (int i = 0; i < bigram_count; i++){
+
+int a = bigrams[i].a;
+int b = bigrams[i].b;
+
+if (syscall_names[a] && syscall_names[b]){
+
+printf("(%s → %s): %d\n",
+	syscall_names[a],
+	syscall_names[b],
+	bigrams[i].count);
+}
+
+}
+
 
 } // main else
 return 0;
