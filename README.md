@@ -5,7 +5,7 @@ Linux Kernel boundary.
 
 ## Current Status 
 
-- v0 / RUng 1: Parent-Child process control using fork() and wait()
+- v0 / Rung 1: Parent-Child process control using fork() and wait()
 
 ## Goal 
 Build a syscall-level behavioral monitoring system for Android/Linux malware analysis.
